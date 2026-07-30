@@ -122,7 +122,7 @@
     .msg-row { display: flex; margin-bottom: 4px; width: 100%; align-items: flex-start; gap: 10px; }
     .msg-row.user { justify-content: flex-end; }
 
-    /* AI Avatar Raw Image Styling */
+    /* AI Avatar PNG Styling */
     .ai-avatar {
       width: 34px;
       height: 34px;
@@ -262,7 +262,7 @@
   <!-- Chat History Window -->
   <div class="chat-container" id="chatWindow">
     <div class="msg-row ai">
-      <img src="avatar.png" class="ai-avatar" alt="AI">
+      <img src="ai-avatar.png" class="ai-avatar" alt="AI">
       <div class="bubble">Hey! How can I help you today?</div>
     </div>
   </div>
@@ -381,7 +381,7 @@
       const aiMsgId = 'ai-msg-' + Date.now();
       chatWindow.innerHTML += `
         <div class="msg-row ai" id="${aiMsgId}">
-          <img src="avatar.png" class="ai-avatar" alt="AI">
+          <img src="ai-avatar.png" class="ai-avatar" alt="AI">
           <div class="bubble"><span class="loading-spinner"></span> Thinking...</div>
         </div>
       `;
@@ -446,4 +446,3 @@
   </script>
 </body>
 </html>
-
