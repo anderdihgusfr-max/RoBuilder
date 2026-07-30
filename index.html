@@ -25,54 +25,83 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 10px 14px;
-      background: rgba(15, 23, 42, 0.6);
-      backdrop-filter: blur(16px);
-      border: 1px solid rgba(6, 182, 212, 0.3);
-      border-radius: 16px;
+      padding: 12px 16px;
+      background: rgba(15, 23, 42, 0.65);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(6, 182, 212, 0.35);
+      border-radius: 20px;
       margin-bottom: 12px;
+      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
     }
 
-    .brand-logo {
-      display: flex;
+    /* Cute Skewed Signboard Logo */
+    .cute-sign-logo {
+      display: inline-flex;
       align-items: center;
-      gap: 8px;
-      font-weight: 700;
-      font-size: 16px;
-      color: #67e8f9;
+      gap: 6px;
+      padding: 6px 14px;
+      background: linear-gradient(135deg, rgba(6, 182, 212, 0.25), rgba(15, 23, 42, 0.85));
+      border: 1.5px solid #22d3ee;
+      border-radius: 12px;
+      transform: skew(-8deg) rotate(-2deg);
+      box-shadow: 0 0 15px rgba(34, 211, 238, 0.4), inset 0 0 10px rgba(6, 182, 212, 0.2);
+      transition: all 0.3s ease;
+      cursor: default;
+    }
+
+    .cute-sign-logo:hover {
+      transform: skew(-4deg) rotate(0deg) scale(1.03);
+      box-shadow: 0 0 22px rgba(34, 211, 238, 0.7);
+    }
+
+    .cute-sign-logo span {
+      display: inline-block;
+      transform: skew(8deg); /* Unskew text for readability */
+      font-weight: 800;
+      font-size: 15px;
+      letter-spacing: 0.5px;
+      background: linear-gradient(90deg, #a5f3fc, #67e8f9, #38bdf8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
       text-shadow: 0 0 10px rgba(103, 232, 249, 0.5);
     }
 
-    .brand-logo img {
-      width: 24px;
-      height: 24px;
-      object-fit: contain;
+    .cute-sign-logo .sign-sparkle {
+      font-size: 14px;
+      -webkit-text-fill-color: initial;
     }
 
     .header-actions { display: flex; align-items: center; gap: 8px; }
 
     .pill-btn {
-      background: rgba(8, 51, 68, 0.5);
-      border: 1px solid rgba(6, 182, 212, 0.4);
+      background: rgba(8, 51, 68, 0.6);
+      border: 1px solid rgba(6, 182, 212, 0.45);
       color: #a5f3fc;
-      padding: 6px 12px;
+      padding: 7px 14px;
       border-radius: 20px;
-      font-size: 12px;
+      font-size: 13px;
+      font-weight: 600;
       cursor: pointer;
       display: flex;
       align-items: center;
       gap: 6px;
-      transition: all 0.2s;
+      transition: all 0.2s ease-in-out;
+      box-shadow: 0 0 10px rgba(6, 182, 212, 0.15);
     }
-    .pill-btn:hover { background: rgba(6, 182, 212, 0.25); border-color: #22d3ee; }
+    .pill-btn:hover { 
+      background: rgba(6, 182, 212, 0.3); 
+      border-color: #22d3ee; 
+      transform: translateY(-1px);
+    }
 
     .mode-select {
-      background: rgba(8, 51, 68, 0.6);
-      border: 1px solid rgba(6, 182, 212, 0.4);
+      background: rgba(8, 51, 68, 0.7);
+      border: 1px solid rgba(6, 182, 212, 0.45);
       color: #22d3ee;
-      padding: 6px 10px;
+      padding: 7px 12px;
       border-radius: 20px;
-      font-size: 12px;
+      font-size: 13px;
+      font-weight: 600;
       outline: none;
       cursor: pointer;
     }
@@ -85,14 +114,14 @@
       height: 140px;
       background: rgba(2, 6, 23, 0.95);
       border: 1px solid #22d3ee;
-      border-radius: 12px;
-      padding: 10px;
+      border-radius: 16px;
+      padding: 12px;
       font-family: monospace;
       font-size: 11px;
       color: #22c55e;
       overflow-y: auto;
       margin-bottom: 12px;
-      box-shadow: 0 0 15px rgba(6, 182, 212, 0.2);
+      box-shadow: 0 0 20px rgba(6, 182, 212, 0.25);
     }
     .console-drawer.active { display: block; }
     .log-err { color: #f43f5e; }
@@ -103,59 +132,44 @@
       width: 100%;
       max-width: 680px;
       flex: 1;
-      min-height: 50vh;
+      min-height: 52vh;
       display: flex;
       flex-direction: column;
-      gap: 12px;
+      gap: 14px;
       overflow-y: auto;
-      padding: 12px;
-      background: rgba(15, 23, 42, 0.4);
-      backdrop-filter: blur(20px);
-      border: 1px solid rgba(6, 182, 212, 0.25);
-      border-radius: 20px;
+      padding: 16px;
+      background: rgba(15, 23, 42, 0.45);
+      backdrop-filter: blur(24px);
+      border: 1px solid rgba(6, 182, 212, 0.3);
+      border-radius: 24px;
       margin-bottom: 12px;
+      box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.3);
     }
 
-    .msg-row { display: flex; gap: 10px; margin-bottom: 8px; width: 100%; }
+    .msg-row { display: flex; gap: 12px; margin-bottom: 4px; width: 100%; }
     .msg-row.user { justify-content: flex-end; }
 
-    .avatar {
-      width: 32px;
-      height: 32px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 16px;
-      flex-shrink: 0;
-      overflow: hidden;
-    }
-    .avatar.ai img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-    .avatar.user { background: #1e293b; border: 1px solid #475569; }
-
     .bubble {
-      max-width: 80%;
-      padding: 10px 14px;
-      border-radius: 16px;
+      max-width: 82%;
+      padding: 12px 16px;
+      border-radius: 20px;
       font-size: 14px;
       line-height: 1.5;
       word-break: break-word;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
     }
     .msg-row.ai .bubble {
-      background: rgba(8, 51, 68, 0.5);
-      border: 1px solid rgba(6, 182, 212, 0.3);
+      background: linear-gradient(135deg, rgba(8, 51, 68, 0.7), rgba(15, 23, 42, 0.8));
+      border: 1px solid rgba(6, 182, 212, 0.35);
       color: #ecfeff;
-      border-top-left-radius: 4px;
+      border-top-left-radius: 6px;
     }
     .msg-row.user .bubble {
-      background: #06b6d4;
-      color: #020617;
+      background: linear-gradient(135deg, #06b6d4, #0284c7);
+      color: #ffffff;
       font-weight: 500;
-      border-top-right-radius: 4px;
+      border-top-right-radius: 6px;
+      box-shadow: 0 4px 15px rgba(6, 182, 212, 0.3);
     }
 
     /* Loading Spinner Animation */
@@ -174,31 +188,33 @@
     .input-card {
       width: 100%;
       max-width: 680px;
-      background: rgba(15, 23, 42, 0.7);
-      backdrop-filter: blur(20px);
-      border: 1px solid rgba(6, 182, 212, 0.35);
-      border-radius: 20px;
-      padding: 12px 16px;
+      background: rgba(15, 23, 42, 0.75);
+      backdrop-filter: blur(24px);
+      border: 1px solid rgba(6, 182, 212, 0.4);
+      border-radius: 24px;
+      padding: 14px 18px;
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      gap: 12px;
+      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
     }
 
     .image-preview-wrapper { display: flex; gap: 8px; flex-wrap: wrap; }
     .image-preview-item {
       position: relative;
-      width: 50px;
-      height: 50px;
-      border-radius: 8px;
+      width: 52px;
+      height: 52px;
+      border-radius: 10px;
       overflow: hidden;
       border: 1px solid #22d3ee;
+      box-shadow: 0 0 10px rgba(34, 211, 238, 0.3);
     }
     .image-preview-item img { width: 100%; height: 100%; object-fit: cover; }
     .remove-img-btn {
       position: absolute; top: 2px; right: 2px;
       background: rgba(2, 6, 23, 0.85); color: #67e8f9;
-      border: none; border-radius: 50%; width: 14px; height: 14px;
-      font-size: 9px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+      border: none; border-radius: 50%; width: 16px; height: 16px;
+      font-size: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center;
     }
 
     .textarea-box {
@@ -217,46 +233,51 @@
     .bar-left, .bar-right { display: flex; align-items: center; gap: 8px; }
 
     .send-btn {
-      background: #06b6d4;
+      background: linear-gradient(135deg, #06b6d4, #0284c7);
       border: none;
-      color: #020617;
-      width: 36px;
-      height: 36px;
-      border-radius: 12px;
+      color: #ffffff;
+      width: 40px;
+      height: 40px;
+      border-radius: 14px;
       display: flex; align-items: center; justify-content: center;
-      cursor: pointer; font-weight: bold; font-size: 16px;
-      box-shadow: 0 0 10px rgba(6, 182, 212, 0.4);
+      cursor: pointer; font-weight: bold; font-size: 18px;
+      box-shadow: 0 0 15px rgba(6, 182, 212, 0.5);
+      transition: all 0.2s ease-in-out;
     }
-    .send-btn:hover { background: #22d3ee; box-shadow: 0 0 15px rgba(34, 211, 238, 0.8); }
+    .send-btn:hover { 
+      background: linear-gradient(135deg, #22d3ee, #06b6d4); 
+      box-shadow: 0 0 20px rgba(34, 211, 238, 0.8);
+      transform: scale(1.05);
+    }
 
     /* Studio Config Drawer */
     .top-bar {
       display: none; width: 100%; max-width: 680px;
       background: rgba(15, 23, 42, 0.9); border: 1px solid #06b6d4;
-      padding: 10px; border-radius: 12px; margin-bottom: 10px;
+      padding: 12px; border-radius: 16px; margin-bottom: 10px;
     }
-    .top-bar.active { display: flex; flex-direction: column; gap: 6px; }
-    .top-bar input { background: #083344; border: 1px solid #06b6d4; color: #fff; padding: 6px; border-radius: 6px; font-size: 12px; }
+    .top-bar.active { display: flex; flex-direction: column; gap: 8px; }
+    .top-bar input { background: #083344; border: 1px solid #06b6d4; color: #fff; padding: 8px; border-radius: 8px; font-size: 12px; }
   </style>
 </head>
 <body>
 
-  <!-- Top Navigation -->
+  <!-- Top Navigation Header with Skewed Sign Logo -->
   <div class="app-header">
-    <div class="brand-logo">
-      <img src="https://raw.githubusercontent.com/anderdihgusfr-max/RoBuilder/refs/heads/main/Untitled78_20260730234253.png" alt="Logo">
-      <span>Gemini AI</span>
+    <div class="cute-sign-logo">
+      <span class="sign-sparkle">✨</span>
+      <span>Gemini Chat</span>
     </div>
     
     <div class="header-actions">
-      <!-- Mode Switcher: AI Chat vs Roblox Studio -->
+      <!-- Mode Switcher -->
       <select id="appMode" class="mode-select" onchange="switchMode()">
         <option value="chat">🤖 AI Chat</option>
         <option value="studio">🧱 Roblox Studio</option>
       </select>
 
       <button class="pill-btn" onclick="toggleConsole()">📟 Log</button>
-      <button class="pill-btn" onclick="redirectToPayment()">💎 <span id="creditDisplay">1.50</span></button>
+      <button class="pill-btn" onclick="redirectToPayment()">✨ <span id="creditDisplay">1.50</span></button>
     </div>
   </div>
 
@@ -271,12 +292,9 @@
     <div class="log-info">[System] Debug Console initialized...</div>
   </div>
 
-  <!-- Chat History Window -->
+  <!-- Chat History Window (No AI Avatars) -->
   <div class="chat-container" id="chatWindow">
     <div class="msg-row ai">
-      <div class="avatar ai">
-        <img src="https://raw.githubusercontent.com/anderdihgusfr-max/RoBuilder/refs/heads/main/Untitled78_20260730234253.png" alt="AI">
-      </div>
       <div class="bubble">Hey! I'm Gemini AI. How can I help you out today?</div>
     </div>
   </div>
@@ -306,7 +324,6 @@
   </div>
 
   <script>
-    const LOGO_URL = "https://raw.githubusercontent.com/anderdihgusfr-max/RoBuilder/refs/heads/main/Untitled78_20260730234253.png";
     let availableCredits = 1.50;
     let uploadedImages = [];
 
@@ -336,7 +353,7 @@
     }
 
     function redirectToPayment() {
-      alert("Redirecting to purchase 💎 credits with Robux / Cards...");
+      alert("Redirecting to purchase ✨ credits with Robux / Cards...");
       logToConsole("Redirecting user to credit shop...");
     }
 
@@ -389,23 +406,19 @@
       let estimatedCost = activeModel === 'gemini-1.5-pro' ? 0.50 : 0.10;
 
       if (availableCredits < estimatedCost) {
-        alert("Not enough 💎 credits! Please add more credits.");
+        alert("Not enough ✨ credits! Please add more credits.");
         return;
       }
 
       chatWindow.innerHTML += `
         <div class="msg-row user">
           <div class="bubble">${promptText || "[Attached Image]"}</div>
-          <div class="avatar user">👤</div>
         </div>
       `;
 
       const aiMsgId = 'ai-msg-' + Date.now();
       chatWindow.innerHTML += `
         <div class="msg-row ai" id="${aiMsgId}">
-          <div class="avatar ai">
-            <img src="${LOGO_URL}" alt="AI">
-          </div>
           <div class="bubble"><span class="loading-spinner"></span> Thinking...</div>
         </div>
       `;
@@ -456,7 +469,7 @@
 
         availableCredits -= estimatedCost;
         document.getElementById('creditDisplay').innerText = availableCredits.toFixed(2);
-        logToConsole(`Response received successfully. Deducted 💎 ${estimatedCost.toFixed(2)}. Remaining: 💎 ${availableCredits.toFixed(2)}`);
+        logToConsole(`Response received successfully. Deducted ✨ ${estimatedCost.toFixed(2)}. Remaining: ✨ ${availableCredits.toFixed(2)}`);
 
         uploadedImages = [];
         renderPreviews();
@@ -469,7 +482,7 @@
         if (err.message === "RATE_LIMIT") {
           errorBubble.innerText = "⚠️ Rate limit reached, please try again later. It's not cause of your credit!";
         } else {
-          errorBubble.innerText = `❌ Request failed (${err.message}). Your 💎 credits were NOT deducted.`;
+          errorBubble.innerText = `❌ Request failed (${err.message}). Your ✨ credits were NOT deducted.`;
         }
       }
       chatWindow.scrollTop = chatWindow.scrollHeight;
