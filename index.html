@@ -8,7 +8,7 @@
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
     body { background-color: #000000; color: #ffffff; min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 16px; overflow-x: hidden; }
 
-    /* Top Config Bar (Collapsible / Hidden) */
+    /* Top Config Bar (Collapsible / Hidden for Github Token & Gist ID) */
     .config-toggle { position: absolute; top: 12px; right: 12px; background: #181818; border: 1px solid #282828; color: #888; font-size: 11px; padding: 4px 10px; border-radius: 20px; cursor: pointer; z-index: 20; }
     .config-toggle:hover { color: #fff; border-color: #444; }
 
@@ -82,19 +82,17 @@
 </head>
 <body>
 
-  <!-- Toggle button to hide/show configuration inputs -->
-  <button class="config-toggle" onclick="toggleConfig()">⚙️ API Settings</button>
+  <!-- Hidden Settings Toggle -->
+  <button class="config-toggle" onclick="toggleConfig()">⚙️ Studio Config</button>
 
-  <!-- Hidden Configuration Panel -->
+  <!-- GitHub Credentials Bar -->
   <div class="top-bar" id="topConfigBar">
-    <input type="password" id="geminiKey" placeholder="Gemini API Key (Leave empty to use localStorage / saved key)">
-    <input type="password" id="githubToken" placeholder="GitHub Token (ghp_...)">
+    <input type="password" id="githubToken" value="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" placeholder="GitHub Token (ghp_...)">
     <input type="text" id="gistId" value="210edf12f31701ce97b141e248fa090c" placeholder="Gist ID">
-    <button onclick="saveKeys()" style="background:#3b82f6; border:none; color:#fff; padding:6px; border-radius:6px; cursor:pointer; font-weight:bold; font-size:12px;">Save Keys Locally</button>
   </div>
 
   <div class="builder-container">
-    <!-- Top Mode Toggle -->
+    <!-- Mode Toggle -->
     <div class="mode-toggle">
       <span>Agent</span>
       <label class="toggle-switch">
@@ -104,7 +102,7 @@
       <span style="color:#ffffff;">Explore</span>
     </div>
 
-    <!-- Main Input Card -->
+    <!-- Main Input Box -->
     <div class="prompt-box">
       <!-- Attached Image Preview -->
       <div class="image-preview-wrapper" id="imgPreviewWrapper">
@@ -116,31 +114,30 @@
       
       <div class="toolbar">
         <div class="toolbar-left">
-          <!-- Image Upload Button (Replaces @ button) -->
+          <!-- Image Upload Button -->
           <button class="tool-btn" onclick="document.getElementById('imageFileInput').click()">🖼️ Image</button>
           <input type="file" id="imageFileInput" accept="image/*" style="display: none;" onchange="handleImageUpload(event)">
         </div>
 
         <div class="toolbar-right">
-          <!-- Model Dropdown Trigger -->
+          <!-- Model Selector Trigger -->
           <button class="tool-btn" onclick="toggleModelMenu(event)" id="selectedModelLabel">
             🌐 Gemini 2.5 Flash ▾
           </button>
 
-          <!-- Credits Button -->
+          <!-- Credits Display -->
           <button class="badge-btn" onclick="toggleModelMenu(event)">
             💾 <span id="creditCount">1.50</span>
           </button>
 
-          <!-- Submit Button -->
+          <!-- Send Prompt Button -->
           <button class="send-btn" onclick="sendPrompt()">➔</button>
         </div>
       </div>
 
-      <!-- Floating Model Selector Popup -->
+      <!-- Floating Model Selection Popup -->
       <div class="model-menu" id="modelMenu" onclick="event.stopPropagation()">
         
-        <!-- Model 1 (Fastest / Cheapest) -->
         <div class="model-card selected" onclick="selectModel('gemini-2.5-flash', 'Gemini 2.5 Flash', 0.10, this)">
           <div class="model-header">
             <span>🌐 Gemini 2.5 Flash</span>
@@ -156,7 +153,6 @@
           </div>
         </div>
 
-        <!-- Model 2 (Balanced) -->
         <div class="model-card" onclick="selectModel('gemini-1.5-flash', 'Gemini 1.5 Flash', 0.25, this)">
           <div class="model-header">
             <span>⚡ Gemini 1.5 Flash</span>
@@ -168,11 +164,10 @@
           </div>
           <div class="rating-row">
             <span>Complex tasks</span>
-            <div class="bars"><div class="bar active"></div><div class="bar active"></div><div class="bar active"></div><div class="bar"></div><div class="bar"></div></div>
+            <div class="bars"><div class="bar active"></div><div class="bar active"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div></div>
           </div>
         </div>
 
-        <!-- Model 3 (Most Powerful) -->
         <div class="model-card" onclick="selectModel('gemini-1.5-pro', 'Gemini 1.5 Pro', 0.50, this)">
           <div class="model-header">
             <span>🧠 Gemini 1.5 Pro</span>
@@ -201,29 +196,13 @@
     let availableCredits = 1.50;
     let uploadedImageBase64 = null;
 
-    // Load saved settings from browser memory on startup
-    window.onload = function() {
-      if (localStorage.getItem('geminiKey')) document.getElementById('geminiKey').value = localStorage.getItem('geminiKey');
-      if (localStorage.getItem('githubToken')) document.getElementById('githubToken').value = localStorage.getItem('githubToken');
-      if (localStorage.getItem('gistId')) document.getElementById('gistId').value = localStorage.getItem('gistId');
-    };
-
     function toggleConfig() {
       document.getElementById('topConfigBar').classList.toggle('active');
     }
 
-    function saveKeys() {
-      localStorage.setItem('geminiKey', document.getElementById('geminiKey').value);
-      localStorage.setItem('githubToken', document.getElementById('githubToken').value);
-      localStorage.setItem('gistId', document.getElementById('gistId').value);
-      alert('Keys saved safely in your browser!');
-      toggleConfig();
-    }
-
     function toggleModelMenu(event) {
       event.stopPropagation();
-      const menu = document.getElementById('modelMenu');
-      menu.classList.toggle('active');
+      document.getElementById('modelMenu').classList.toggle('active');
     }
 
     document.addEventListener('click', () => {
@@ -245,7 +224,6 @@
       document.getElementById('creditCount').innerText = availableCredits.toFixed(2);
     }
 
-    // Handle Image Attachment
     function handleImageUpload(event) {
       const file = event.target.files[0];
       if (!file) return;
@@ -253,7 +231,7 @@
       const reader = new FileReader();
       reader.onload = function(e) {
         const fullBase64 = e.target.result;
-        uploadedImageBase64 = fullBase64.split(',')[1]; // Get raw base64 string
+        uploadedImageBase64 = fullBase64.split(',')[1];
         document.getElementById('imgPreview').src = fullBase64;
         document.getElementById('imgPreviewWrapper').style.display = 'block';
       };
@@ -267,46 +245,44 @@
     }
 
     async function sendPrompt() {
-      const geminiKey = document.getElementById('geminiKey').value || localStorage.getItem('geminiKey');
-      const token = document.getElementById('githubToken').value || localStorage.getItem('githubToken');
-      const gistId = document.getElementById('gistId').value || localStorage.getItem('gistId');
+      const token = document.getElementById('githubToken').value;
+      const gistId = document.getElementById('gistId').value;
       const prompt = document.getElementById('promptInput').value;
       const status = document.getElementById('status');
 
-      if (!geminiKey || !token || !gistId || (!prompt && !uploadedImageBase64)) {
-        return alert("Please configure your API keys (⚙️ API Settings) and write a prompt or attach an image!");
+      if (!prompt && !uploadedImageBase64) {
+        return alert("Please write a prompt or attach an image!");
       }
 
       if (availableCredits < currentCost) {
         return alert("Not enough credits! Click 'Add Free Credits' in the model menu.");
       }
 
-      status.innerText = `Generating Luau code with ${activeModel}...`;
+      status.innerText = `Generating Luau code via Vercel (${activeModel})...`;
 
       try {
         availableCredits -= currentCost;
         document.getElementById('creditCount').innerText = availableCredits.toFixed(2);
 
-        // Prepare request body (handles both text and image input)
-        const parts = [{ text: `You are a Roblox Luau engine code generator. Output ONLY raw, executable Luau code for Workspace based on the request/image. Do NOT wrap in markdown or backticks. Prompt: ${prompt || "Recreate what is shown in the image"}` }];
+        // 1. Send request to your Vercel Proxy (Replace with your actual Vercel URL)
+        const vercelEndpoint = 'https://YOUR-VERCEL-URL.vercel.app/api/generate';
         
-        if (uploadedImageBase64) {
-          parts.push({
-            inline_data: {
-              mime_type: "image/png",
-              data: uploadedImageBase64
-            }
-          });
-        }
-
-        // 1. Call Gemini API
-        const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${activeModel}:generateContent?key=${geminiKey}`, {
+        const geminiRes = await fetch(vercelEndpoint, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ contents: [{ parts }] })
+          body: JSON.stringify({
+            prompt: prompt,
+            activeModel: activeModel,
+            uploadedImageBase64: uploadedImageBase64
+          })
         });
 
         const gData = await geminiRes.json();
+        
+        if (gData.error) {
+          throw new Error(gData.error);
+        }
+
         let luauCode = gData.candidates[0].content.parts[0].text;
         luauCode = luauCode.replace(/```lua/g, '').replace(/```/g, '').trim();
 
@@ -331,8 +307,8 @@
           })
         });
 
-        status.innerText = "Success! Roblox Studio is generating your build now.";
-        removeImage(); // Clear attached image after sending
+        status.innerText = "Success! Sent to Roblox Studio.";
+        removeImage();
         document.getElementById('promptInput').value = '';
       } catch (err) {
         status.innerText = "Error: " + err.message;
@@ -341,3 +317,4 @@
   </script>
 </body>
 </html>
+
