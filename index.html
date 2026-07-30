@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>RoBuilder - 100% GitHub AI</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 500px; margin: 40px auto; padding: 20px; text-align: center; }
+    textarea { width: 100%; height: 100px; padding: 10px; border-radius: 6px; }
+    input { width: 100%; padding: 8px; margin: 5px 0; box-sizing: border-box; }
+    button { padding: 12px 24px; font-size: 16px; background: #2da44e; color: white; border: none; border-radius: 6px; cursor: pointer; margin-top: 10px; }
+    #status { margin-top: 15px; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <h2>Roblox AI Studio Builder</h2>
+  
+  <input type="password" id="geminiKey" placeholder="Paste Gemini API Key">
+  <input type="password" id="githubToken" placeholder="Paste GitHub Token (ghp_...)">
+  <input type="text" id="gistId" placeholder="Paste Gist ID">
+  
+  <textarea id="promptInput" placeholder="e.g. Build a red glowing staircase"></textarea><br>
+  <button onclick="sendPrompt()">Build in Roblox</button>
+  <p id="status"></p>
+
+  <script>
+    async function sendPrompt() {
+      const geminiKey = document.getElementById('geminiKey').value;
+      const token = document.getElementById('githubToken').value;
+      const gistId = document.getElementById('gistId').value;
+      const prompt = document.getElementById('promptInput').value;
+      const status = document.getElementById('status');
+
+      if (!geminiKey || !token || !gistId || !prompt) {
+        return alert("Please fill in all boxes!");
+      }
+
+      status.innerText = "Asking AI for Luau code...";
+
+      try {
+        // 1. Ask Gemini API for Luau Code directly from browser
+        const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiKey}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: `Generate raw, clean Roblox Luau code to execute in Workspace. Do NOT use markdown code blocks or blockticks. Prompt: ${prompt}` }] }]
+          })
+        });
+
+        const gData = await geminiRes.json();
+        let luauCode = gData.candidates[0].content.parts[0].text;
+        luauCode = luauCode.replace(/```lua/g, '').replace(/```/g, '').trim();
+
+        status.innerText = "Sending code to GitHub Gist...";
+
+        // 2. Fetch current Gist content
+        const gistRes = await fetch(`https://api.github.com/gists/${gistId}`);
+        const gistData = await gistRes.json();
+        let currentCommands = JSON.parse(gistData.files["commands.json"].content || "[]");
+
+        currentCommands.push(luauCode);
+
+        // 3. Update Gist with new command
+        await fetch(`https://api.github.com/gists/${gistId}`, {
+          method: 'PATCH',
+          headers: {
+            'Authorization': `token ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            files: {
+              "commands.json": { content: JSON.stringify(currentCommands) }
+            }
+          })
+        });
+
+        status.innerText = "Success! Roblox Studio will pick it up now.";
+      } catch (err) {
+        status.innerText = "Error: " + err.message;
+      }
+    }
+  </script>
+</body>
+</html>
