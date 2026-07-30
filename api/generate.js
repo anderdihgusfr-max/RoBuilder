@@ -1,49 +1,47 @@
 export default async function handler(req, res) {
-  // Allow requests from your website
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method Not Allowed' });
   }
 
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
+  const { prompt, activeModel, uploadedImages } = req.body;
+  const apiKey = process.env.GEMINI_API_KEY;
+
+  if (!apiKey) {
+    return res.status(500).json({ error: 'GEMINI_API_KEY is not set in Vercel Environment Variables.' });
   }
 
   try {
-    const { prompt, activeModel, uploadedImageBase64 } = req.body;
-    
-    // Reads your hidden key safely from server memory
-    const geminiKey = process.env.GEMINI_API_KEY;
+    const modelName = activeModel || 'gemini-1.5-flash';
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
 
-    if (!geminiKey) {
-      return res.status(500).json({ error: 'Server key not configured!' });
+    let parts = [];
+    if (prompt) {
+      parts.push({ text: prompt });
     }
 
-    const model = activeModel || 'gemini-2.5-flash';
-    const parts = [{ text: `You are a Roblox Luau engine code generator. Output ONLY raw, executable Luau code for Workspace based on the request/image. Do NOT wrap in markdown or backticks. Prompt: ${prompt || "Recreate what is shown in the image"}` }];
-
-    if (uploadedImageBase64) {
-      parts.push({
-        inline_data: {
-          mime_type: "image/png",
-          data: uploadedImageBase64
-        }
+    if (uploadedImages && uploadedImages.length > 0) {
+      uploadedImages.forEach(imgBase64 => {
+        parts.push({
+          inline_data: {
+            mime_type: 'image/jpeg',
+            data: imgBase64
+          }
+        });
       });
     }
 
-    const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${geminiKey}`, {
+    const response = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ contents: [{ parts }] })
+      body: JSON.stringify({
+        contents: [{ parts: parts }]
+      })
     });
 
-    const data = await geminiRes.json();
-    return res.status(200).json(data);
-  } catch (error) {
-    return res.status(500).json({ error: error.message });
+    const data = await response.json();
+    return res.status(response.status).json(data);
+
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
   }
 }
-
