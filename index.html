@@ -2,27 +2,78 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>RoBuilder - 100% GitHub AI</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RoBuilder AI</title>
   <style>
-    body { font-family: Arial, sans-serif; max-width: 500px; margin: 40px auto; padding: 20px; text-align: center; }
-    textarea { width: 100%; height: 100px; padding: 10px; border-radius: 6px; }
-    input { width: 100%; padding: 8px; margin: 5px 0; box-sizing: border-box; }
-    button { padding: 12px 24px; font-size: 16px; background: #2da44e; color: white; border: none; border-radius: 6px; cursor: pointer; margin-top: 10px; }
-    #status { margin-top: 15px; font-weight: bold; }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+    body { background-color: #0b0b0b; color: #ffffff; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+
+    /* Top Settings Bar */
+    .top-bar { display: flex; gap: 10px; padding: 12px; background: #121212; border-bottom: 1px solid #1f1f1f; }
+    .top-bar input { background: #1a1a1a; border: 1px solid #2a2a2a; color: #fff; padding: 8px 12px; border-radius: 6px; flex: 1; font-size: 12px; outline: none; }
+    .top-bar input:focus { border-color: #3b82f6; }
+
+    /* Center Dashboard Content */
+    .main-container { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; position: relative; }
+    
+    .title { font-size: 28px; font-weight: 500; margin-bottom: 24px; color: #e5e5e5; }
+    .title span { font-style: italic; font-weight: 400; color: #a3a3a3; }
+
+    /* Floating Prompt Cards Preview */
+    .floating-cards { display: flex; gap: 12px; margin-bottom: 24px; flex-wrap: wrap; justify-content: center; }
+    .chip-card { background: #18181b; border: 1px solid #27272a; border-radius: 20px; padding: 8px 16px; font-size: 13px; color: #d4d4d8; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; gap: 6px; }
+    .chip-card:hover { background: #27272a; border-color: #3f3f46; transform: translateY(-1px); }
+
+    /* Central Main Search/Prompt Box */
+    .prompt-box { width: 100%; max-width: 680px; background: #18181b; border: 1px solid #27272a; border-radius: 12px; padding: 12px 16px; position: relative; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+    .prompt-box textarea { width: 100%; background: transparent; border: none; color: #fff; font-size: 15px; resize: none; outline: none; height: 50px; }
+    .prompt-box textarea::placeholder { color: #71717a; }
+
+    .action-bar { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; }
+    .status-text { font-size: 12px; color: #22c55e; }
+    
+    .send-btn { background: #e4e4e7; color: #09090b; border: none; border-radius: 8px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s; }
+    .send-btn:hover { background: #ffffff; }
+    .send-btn svg { width: 16px; height: 16px; fill: currentColor; }
   </style>
 </head>
 <body>
-  <h2>Roblox AI Studio Builder</h2>
-  
-  <input type="password" id="geminiKey" placeholder="Paste Gemini API Key">
-  <input type="password" id="githubToken" placeholder="Paste GitHub Token (ghp_...)">
-  <input type="text" id="gistId" placeholder="Paste Gist ID">
-  
-  <textarea id="promptInput" placeholder="e.g. Build a red glowing staircase"></textarea><br>
-  <button onclick="sendPrompt()">Build in Roblox</button>
-  <p id="status"></p>
+
+  <!-- Top Inputs for API keys & IDs -->
+  <div class="top-bar">
+    <input type="password" id="geminiKey" placeholder="Gemini API Key">
+    <input type="password" id="githubToken" placeholder="GitHub Token (ghp_...)">
+    <input type="text" id="gistId" placeholder="Gist ID">
+  </div>
+
+  <!-- Central Interface -->
+  <div class="main-container">
+    <h1 class="title">Describe a <span>game mechanic...</span></h1>
+
+    <!-- Quick-select prompt buttons -->
+    <div class="floating-cards">
+      <div class="chip-card" onclick="setPrompt('Make a combat system with sword slashing mechanics')">⚔️ Make a combat system</div>
+      <div class="chip-card" onclick="setPrompt('Make a plot system where players can purchase land')">🟩 Make a plot system</div>
+      <div class="chip-card" onclick="setPrompt('Make a round system with intermission and voting')">⏰ Make a round system</div>
+    </div>
+
+    <!-- Main Prompt Input Box -->
+    <div class="prompt-box">
+      <textarea id="promptInput" placeholder="Add a gun with shooting mechanic"></textarea>
+      <div class="action-bar">
+        <span id="status" class="status-text"></span>
+        <button class="send-btn" onclick="sendPrompt()">
+          <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
 
   <script>
+    function setPrompt(text) {
+      document.getElementById('promptInput').value = text;
+    }
+
     async function sendPrompt() {
       const geminiKey = document.getElementById('geminiKey').value;
       const token = document.getElementById('githubToken').value;
@@ -31,18 +82,18 @@
       const status = document.getElementById('status');
 
       if (!geminiKey || !token || !gistId || !prompt) {
-        return alert("Please fill in all boxes!");
+        return alert("Please fill in all key inputs at the top and write a prompt!");
       }
 
-      status.innerText = "Asking AI for Luau code...";
+      status.innerText = "Generating Luau code...";
 
       try {
-        // 1. Ask Gemini API for Luau Code directly from browser
+        // 1. Call Gemini AI directly
         const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiKey}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            contents: [{ parts: [{ text: `Generate raw, clean Roblox Luau code to execute in Workspace. Do NOT use markdown code blocks or blockticks. Prompt: ${prompt}` }] }]
+            contents: [{ parts: [{ text: `You are a Roblox Luau code generator. Output ONLY raw executable Luau code for Workspace without markdown blocks. Prompt: ${prompt}` }] }]
           })
         });
 
@@ -50,7 +101,7 @@
         let luauCode = gData.candidates[0].content.parts[0].text;
         luauCode = luauCode.replace(/```lua/g, '').replace(/```/g, '').trim();
 
-        status.innerText = "Sending code to GitHub Gist...";
+        status.innerText = "Pushing to Studio...";
 
         // 2. Fetch current Gist content
         const gistRes = await fetch(`https://api.github.com/gists/${gistId}`);
@@ -59,7 +110,7 @@
 
         currentCommands.push(luauCode);
 
-        // 3. Update Gist with new command
+        // 3. Update Gist
         await fetch(`https://api.github.com/gists/${gistId}`, {
           method: 'PATCH',
           headers: {
@@ -67,13 +118,11 @@
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
-            files: {
-              "commands.json": { content: JSON.stringify(currentCommands) }
-            }
+            files: { "commands.json": { content: JSON.stringify(currentCommands) } }
           })
         });
 
-        status.innerText = "Success! Roblox Studio will pick it up now.";
+        status.innerText = "Sent! Check Roblox Studio.";
       } catch (err) {
         status.innerText = "Error: " + err.message;
       }
