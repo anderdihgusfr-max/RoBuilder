@@ -122,19 +122,15 @@
     .msg-row { display: flex; margin-bottom: 4px; width: 100%; align-items: flex-start; gap: 10px; }
     .msg-row.user { justify-content: flex-end; }
 
-    /* AI Avatar Styling */
+    /* AI Avatar Raw Image Styling */
     .ai-avatar {
-      width: 32px;
-      height: 32px;
+      width: 34px;
+      height: 34px;
       border-radius: 50%;
-      background: rgba(255, 255, 255, 0.1);
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 16px;
+      object-fit: cover;
+      border: 1px solid rgba(255, 255, 255, 0.25);
       flex-shrink: 0;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.5);
     }
 
     .bubble {
@@ -266,7 +262,7 @@
   <!-- Chat History Window -->
   <div class="chat-container" id="chatWindow">
     <div class="msg-row ai">
-      <div class="ai-avatar">🤖</div>
+      <img src="ai-avatar.png" class="ai-avatar" alt="AI">
       <div class="bubble">Hey! How can I help you today?</div>
     </div>
   </div>
@@ -385,7 +381,7 @@
       const aiMsgId = 'ai-msg-' + Date.now();
       chatWindow.innerHTML += `
         <div class="msg-row ai" id="${aiMsgId}">
-          <div class="ai-avatar">🤖</div>
+          <img src="ai-avatar.png" class="ai-avatar" alt="AI">
           <div class="bubble"><span class="loading-spinner"></span> Thinking...</div>
         </div>
       `;
@@ -417,10 +413,10 @@
         const data = await res.json();
 
         if (data.error) {
-          if (data.error.includes("429") || data.error.toLowerCase().includes("quota")) {
+          if (typeof data.error === 'string' && (data.error.includes("429") || data.error.toLowerCase().includes("quota"))) {
             throw new Error("RATE_LIMIT");
           }
-          throw new Error(data.error);
+          throw new Error(data.error.message || data.error);
         }
 
         let reply = data.candidates[0].content.parts[0].text;
@@ -450,3 +446,4 @@
   </script>
 </body>
 </html>
+
