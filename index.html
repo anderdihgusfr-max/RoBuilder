@@ -66,14 +66,16 @@
 </head>
 <body>
 
-  <!-- Top API Configuration -->
+  <!-- Top API Configuration (Pre-filled with your keys) -->
   <div class="top-bar">
-    <input type="password" id="geminiKey" placeholder="Gemini API Key">
-    <input type="password" id="githubToken" placeholder="GitHub Token (ghp_...)">
-    <input type="text" id="gistId" placeholder="Gist ID">
-  </div>
-
-  <div class="builder-container">
+    <input type="password" id="geminiKey" value="AQ.Ab8RN6K0581gWgSEHNkOfoy0bth4rcEIgyYck1o0A3631c8Cqw" placeholder="Gemini API Key">
+    <input type="password" id="githubToken" value="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" placeholder="GitHub Token (ghp_...)">
+    <input type="text" id="gistId" value="210edf12f31701ce97b141e248fa090c" placeholder="Gist ID">
+<div class="top-bar">
+  <input type="password" id="geminiKey" placeholder="Gemini API Key">
+  <input type="password" id="githubToken" placeholder="GitHub Token (ghp_...)">
+  <input type="text" id="gistId" value="210edf12f31701ce97b141e248fa090c" placeholder="Gist ID">
+</div>
     <!-- Top Toggle Switch -->
     <div class="mode-toggle">
       <span>Agent</span>
@@ -216,7 +218,6 @@
       status.innerText = `Generating Luau code with ${activeModel}...`;
 
       try {
-        // Deduction
         availableCredits -= currentCost;
         document.getElementById('creditCount').innerText = availableCredits.toFixed(2);
 
