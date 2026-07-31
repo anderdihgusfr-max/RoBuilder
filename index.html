@@ -223,8 +223,8 @@
     let currentBase64Image = null;
     let currentMimeType = null;
 
-    // REPLACE THIS URL WITH YOUR DEPLOYED VERCEL BACKEND ROUTE:
-    const VERCEL_BACKEND_URL = 'https://YOUR_VERCEL_APP_NAME.vercel.app/api/generate';
+    // Put your Gemini API key here:
+    const API_KEY = "YOUR_GEMINI_API_KEY_HERE";
 
     function handleImageSelect(event) {
       const file = event.target.files[0];
@@ -298,28 +298,31 @@
       container.scrollTop = container.scrollHeight;
 
       try {
-        const userParts = [];
+        const parts = [];
         if (attachedImgBase64) {
-          userParts.push({ inline_data: { mime_type: attachedMime, data: attachedImgBase64 } });
+          parts.push({ inline_data: { mime_type: attachedMime, data: attachedImgBase64 } });
         }
         if (text) {
-          userParts.push({ text: text });
+          parts.push({ text: text });
         }
 
-        const res = await fetch(VERCEL_BACKEND_URL, {
+        const selectedModel = modelSelect.value;
+        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${selectedModel}:generateContent?key=${API_KEY}`;
+
+        const res = await fetch(endpoint, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            prompt: text || "Analyze this image.",
-            model: modelSelect.value,
-            history: chatHistory,
-            imagePart: attachedImgBase64 ? { mime_type: attachedMime, data: attachedImgBase64 } : null
+            contents: [
+              ...chatHistory,
+              { role: 'user', parts: parts }
+            ]
           })
         });
 
         const data = await res.json();
         if (data.error) {
-          aiMsg.innerHTML = `Backend Error: ${data.error}`;
+          aiMsg.innerHTML = `API Error: ${data.error.message}`;
           return;
         }
 
@@ -332,11 +335,11 @@
         userCredits = Math.max(0, userCredits - cost);
         creditDisplay.innerText = userCredits;
 
-        chatHistory.push({ role: 'user', parts: userParts });
+        chatHistory.push({ role: 'user', parts: parts });
         chatHistory.push({ role: 'model', parts: [{ text: reply.replace(/<br>/g, '\n') }] });
 
       } catch (err) {
-        aiMsg.innerHTML = 'Request failed. Check Vercel backend URL or CORS settings!';
+        aiMsg.innerHTML = 'Request failed. Make sure your API key is set correctly!';
       }
 
       container.scrollTop = container.scrollHeight;
