@@ -185,11 +185,8 @@
   <header>
     <button class="icon-btn">＝</button>
     <select id="model-select">
-      <option value="gemini-3.1-flash-lite" style="color: #22c55e;">🟢 gemini-3.1-flash-lite ($)</option>
-      <option value="gemini-2.5-flash" style="color: #f97316;">🟠 gemini-2.5-flash ($$)</option>
-      <option value="gemini-3.5-flash" style="color: #eab308;">🟡 gemini-3.5-flash ($$$)</option>
+      <option value="gemini-2.5-flash" style="color: #22c55e;">🟢 gemini-2.5-flash ($)</option>
       <option value="gemini-2.5-pro" style="color: #ef4444;">🟤 gemini-2.5-pro ($$$$)</option>
-      <option value="gemini-3.1-pro-preview" style="color: #dc2626;">🔴 gemini-3.1-pro-preview ($$$$$)</option>
     </select>
     <div class="header-right">
       <button class="icon-btn">↻</button>
@@ -225,6 +222,9 @@
     let chatHistory = [];
     let currentBase64Image = null;
     let currentMimeType = null;
+
+    // REPLACE THIS URL WITH YOUR DEPLOYED VERCEL BACKEND ROUTE:
+    const VERCEL_BACKEND_URL = 'https://YOUR_VERCEL_APP_NAME.vercel.app/api/generate';
 
     function handleImageSelect(event) {
       const file = event.target.files[0];
@@ -306,7 +306,7 @@
           userParts.push({ text: text });
         }
 
-        const res = await fetch('/api/generate', {
+        const res = await fetch(VERCEL_BACKEND_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -318,7 +318,12 @@
         });
 
         const data = await res.json();
-        let reply = data.candidates?.[0]?.content?.parts?.[0]?.text || "Error processing response.";
+        if (data.error) {
+          aiMsg.innerHTML = `Backend Error: ${data.error}`;
+          return;
+        }
+
+        let reply = data.candidates?.[0]?.content?.parts?.[0]?.text || "No output generated.";
         
         reply = reply.replace(/\n/g, '<br>');
         aiMsg.innerHTML = reply;
@@ -331,7 +336,7 @@
         chatHistory.push({ role: 'model', parts: [{ text: reply.replace(/<br>/g, '\n') }] });
 
       } catch (err) {
-        aiMsg.innerHTML = 'Request failed (SERVER_ERROR). Check backend route!';
+        aiMsg.innerHTML = 'Request failed. Check Vercel backend URL or CORS settings!';
       }
 
       container.scrollTop = container.scrollHeight;
