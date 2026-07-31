@@ -387,4 +387,287 @@
   </script>
 </body>
 </html>
+      align-items: center;
+    }
+
+    input[type="text"] {
+      flex: 1;
+      background: #111217;
+      border: 1px solid #3f4156;
+      color: #fff;
+      padding: 12px;
+      border-radius: 10px;
+      font-size: 0.95rem;
+      outline: none;
+    }
+
+    button, .file-btn {
+      background: #3b82f6;
+      color: #fff;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: bold;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.2s;
+    }
+    button:hover { background: #2563eb; }
+    .file-btn { background: #374151; font-size: 1.1rem; padding: 10px 14px; cursor: pointer; }
+    .file-btn:hover { background: #4b5563; }
+    
+    #credit-bar {
+      font-size: 0.85rem;
+      color: #9ca3af;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    #image-preview-container {
+      display: none;
+      align-items: center;
+      gap: 10px;
+      background: #111217;
+      padding: 6px 12px;
+      border-radius: 8px;
+      width: fit-content;
+      border: 1px solid #3f4156;
+    }
+    #image-preview-container img {
+      width: 40px;
+      height: 40px;
+      object-fit: cover;
+      border-radius: 6px;
+    }
+    .remove-img {
+      background: #ef4444;
+      color: #fff;
+      border: none;
+      border-radius: 50%;
+      width: 22px;
+      height: 22px;
+      font-size: 11px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Fullscreen Image Modal Overlay */
+    #image-modal {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0, 0, 0, 0.92);
+      justify-content: center;
+      align-items: center;
+      z-index: 4000;
+      cursor: pointer;
+    }
+    #image-modal img {
+      max-width: 92%;
+      max-height: 92%;
+      border-radius: 10px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Google Login Overlay -->
+  <div id="login-overlay">
+    <h2>Welcome to Gemini</h2>
+    <p>Please sign in with your Google account to start chatting.</p>
+    <div id="g_id_onload"
+         data-client_id="YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com"
+         data-callback="handleCredentialResponse">
+    </div>
+    <div class="g_id_signin" data-type="standard"></div>
+  </div>
+
+  <!-- Fullscreen Image Modal Overlay -->
+  <div id="image-modal" onclick="closeModal()">
+    <img id="modal-img" src="" alt="Fullscreen view">
+  </div>
+
+  <header>
+    <div class="header-title">✨ Gemini AI</div>
+    <div>
+      <select id="model-select">
+        <option value="gemini-3.1-flash-lite" style="color: #22c55e;">🟢 gemini-3.1-flash-lite ($)</option>
+        <option value="gemini-2.5-flash" style="color: #f97316;">🟠 gemini-2.5-flash ($$)</option>
+        <option value="gemini-3.5-flash" style="color: #eab308;">🟡 gemini-3.5-flash ($$$)</option>
+        <option value="gemini-2.5-pro" style="color: #ef4444;">🟤 gemini-2.5-pro ($$$$)</option>
+        <option value="gemini-3.1-pro-preview" style="color: #dc2626; font-weight: bold;">🔴 gemini-3.1-pro-preview ($$$$$)</option>
+      </select>
+    </div>
+  </header>
+
+  <div id="chat-container">
+    <div class="message ai">Hello! How can I help you today?</div>
+  </div>
+
+  <div id="input-area">
+    <div id="credit-bar">
+      <span>User: <span id="user-email" style="color:#e2e8f0;">None</span></span>
+      <span>Credits: <strong id="credit-count" style="color:#4ade80;">1000</strong> 🪙</span>
+    </div>
+    <div id="image-preview-container">
+      <img id="preview-thumb" src="" alt="preview">
+      <span style="font-size: 0.85rem; color:#aaa;">Image attached</span>
+      <button class="remove-img" onclick="clearImage()">✕</button>
+    </div>
+    <div class="input-row">
+      <label class="file-btn">
+        📎 <input type="file" id="image-input" accept="image/*" style="display:none;" onchange="handleImageSelect(event)">
+      </label>
+      <input type="text" id="prompt-input" placeholder="Ask Gemini anything..." autocomplete="off">
+      <button onclick="sendMessage()">Send</button>
+    </div>
+  </div>
+
+  <script>
+    let userCredits = 1000;
+    let chatHistory = [];
+    let currentBase64Image = null;
+    let currentMimeType = null;
+
+    function handleCredentialResponse(response) {
+      try {
+        const base64Url = response.credential.split('.')[1];
+        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+        const jsonPayload = decodeURIComponent(atob(base64).split('').map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join(''));
+        const profile = JSON.parse(jsonPayload);
+        document.getElementById('user-email').innerText = profile.email;
+        document.getElementById('login-overlay').style.display = 'none';
+      } catch (e) {
+        document.getElementById('user-email').innerText = 'Authenticated User';
+        document.getElementById('login-overlay').style.display = 'none';
+      }
+    }
+
+    function handleImageSelect(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      currentMimeType = file.type;
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const base64Full = e.target.result;
+        currentBase64Image = base64Full.split(',')[1];
+        document.getElementById('preview-thumb').src = base64Full;
+        document.getElementById('image-preview-container').style.display = 'flex';
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function clearImage() {
+      currentBase64Image = null;
+      currentMimeType = null;
+      document.getElementById('image-input').value = '';
+      document.getElementById('image-preview-container').style.display = 'none';
+    }
+
+    function openModal(imgSrc) {
+      document.getElementById('modal-img').src = imgSrc;
+      document.getElementById('image-modal').style.display = 'flex';
+    }
+
+    function closeModal() {
+      document.getElementById('image-modal').style.display = 'none';
+    }
+
+    async function sendMessage() {
+      const input = document.getElementById('prompt-input');
+      const container = document.getElementById('chat-container');
+      const creditDisplay = document.getElementById('credit-count');
+      const modelSelect = document.getElementById('model-select');
+      
+      const text = input.value.trim();
+      if (!text && !currentBase64Image) return;
+
+      if (userCredits <= 0) {
+        alert("Out of credits! You broke, bradar 💀");
+        return;
+      }
+
+      const userMsg = document.createElement('div');
+      userMsg.className = 'message user';
+      
+      let userContentHtml = '';
+      if (currentBase64Image) {
+        const fullDataUrl = `data:${currentMimeType};base64,${currentBase64Image}`;
+        userContentHtml += `<img src="${fullDataUrl}" class="chat-img" onclick="openModal('${fullDataUrl}')">`;
+      }
+      if (text) {
+        userContentHtml += `<span>${text}</span>`;
+      }
+      userMsg.innerHTML = userContentHtml;
+      container.appendChild(userMsg);
+
+      const attachedImgBase64 = currentBase64Image;
+      const attachedMime = currentMimeType;
+
+      input.value = '';
+      clearImage();
+      container.scrollTop = container.scrollHeight;
+
+      const aiMsg = document.createElement('div');
+      aiMsg.className = 'message ai';
+      aiMsg.innerText = 'Thinking...';
+      container.appendChild(aiMsg);
+      container.scrollTop = container.scrollHeight;
+
+      try {
+        const userParts = [];
+        if (attachedImgBase64) {
+          userParts.push({
+            inline_data: {
+              mime_type: attachedMime,
+              data: attachedImgBase64
+            }
+          });
+        }
+        if (text) {
+          userParts.push({ text: text });
+        }
+
+        const res = await fetch('/api/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            prompt: text || "Analyze this image.",
+            model: modelSelect.value,
+            history: chatHistory,
+            imagePart: attachedImgBase64 ? { mime_type: attachedMime, data: attachedImgBase64 } : null
+          })
+        });
+
+        const data = await res.json();
+        const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || "Error processing response.";
+        
+        aiMsg.innerText = reply;
+        
+        const cost = Math.max(5, Math.floor(reply.length / 10));
+        userCredits = Math.max(0, userCredits - cost);
+        creditDisplay.innerText = userCredits;
+
+        chatHistory.push({ role: 'user', parts: userParts });
+        chatHistory.push({ role: 'model', parts: [{ text: reply }] });
+
+      } catch (err) {
+        aiMsg.innerText = 'Request failed (SERVER_ERROR). Check backend route!';
+      }
+
+      container.scrollTop = container.scrollHeight;
+    }
+
+    document.getElementById('prompt-input').addEventListener('keypress', function (e) {
+      if (e.key === 'Enter') sendMessage();
+    });
+  </script>
+</body>
+</html>
 
