@@ -3,44 +3,29 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AI Studio App</title>
-  <!-- Google Identity Services for Google Account Login -->
-  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <title>ro-builder</title>
   <style>
-    body {
-      background-color: #0f1015;
-      color: #f3f4f6;
-      font-family: monospace, sans-serif;
+    * {
+      box-sizing: border-box;
       margin: 0;
+      padding: 0;
+      font-family: monospace, sans-serif;
+    }
+    body {
+      background-color: #0b0c10;
+      color: #e0e0e0;
       display: flex;
       flex-direction: column;
       height: 100vh;
       overflow: hidden;
     }
-    #login-overlay {
-      position: fixed;
-      top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(15, 16, 21, 0.95);
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      z-index: 1000;
-    }
     header {
       padding: 10px 15px;
-      background: #181920;
+      background: #111217;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      border-bottom: 1px solid #2a2b36;
-    }
-    select {
-      background: #22232e;
-      color: #fff;
-      border: 1px solid #3f4156;
-      padding: 5px;
-      border-radius: 5px;
+      border-bottom: 1px solid #1f2129;
     }
     #chat-container {
       flex: 1;
@@ -59,8 +44,17 @@
       flex-direction: column;
       gap: 8px;
     }
-    .user { background: #2563eb; align-self: flex-end; }
-    .ai { background: #1f2937; align-self: flex-start; border: 1px solid #374151; }
+    .user { 
+      background: #2563eb; 
+      color: #fff;
+      align-self: flex-end; 
+    }
+    .ai { 
+      background: #1f2937; 
+      color: #f3f4f6;
+      align-self: flex-start; 
+      border: 1px solid #374151; 
+    }
     
     .chat-img {
       max-width: 200px;
@@ -77,7 +71,7 @@
       border-top: 1px solid #2a2b36;
       display: flex;
       flex-direction: column;
-      gap: 5px;
+      gap: 8px;
     }
     .input-row {
       display: flex;
@@ -91,6 +85,8 @@
       color: #fff;
       padding: 10px;
       border-radius: 6px;
+      font-size: 0.95rem;
+      outline: none;
     }
     button, .file-btn {
       background: #3b82f6;
@@ -111,6 +107,17 @@
       color: #9ca3af;
       display: flex;
       justify-content: space-between;
+      align-items: center;
+    }
+
+    select {
+      background: #22232e;
+      color: #fff;
+      border: 1px solid #3f4156;
+      padding: 5px;
+      border-radius: 5px;
+      font-size: 0.85rem;
+      outline: none;
     }
 
     #image-preview-container {
@@ -167,17 +174,6 @@
 </head>
 <body>
 
-  <!-- Google Login Overlay -->
-  <div id="login-overlay">
-    <h2>Login Required</h2>
-    <p>Please sign in with your Google account to access chat.</p>
-    <div id="g_id_onload"
-         data-client_id="YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com"
-         data-callback="handleCredentialResponse">
-    </div>
-    <div class="g_id_signin" data-type="standard"></div>
-  </div>
-
   <!-- Fullscreen Image Modal Overlay -->
   <div id="image-modal" onclick="closeModal()">
     <img id="modal-img" src="" alt="Fullscreen view">
@@ -185,15 +181,7 @@
 
   <header>
     <div><strong>RoBuilder AI</strong></div>
-    <div>
-      <select id="model-select">
-        <option value="gemini-3.1-flash-lite" class="tier-1">🟢 gemini-3.1-flash-lite ($)</option>
-        <option value="gemini-2.5-flash" class="tier-2">🟠 gemini-2.5-flash ($$)</option>
-        <option value="gemini-3.5-flash" class="tier-3">🟡 gemini-3.5-flash ($$$)</option>
-        <option value="gemini-2.5-pro" class="tier-4">🟤 gemini-2.5-pro ($$$$)</option>
-        <option value="gemini-3.1-pro-preview" class="tier-5">🔴 gemini-3.1-pro-preview ($$$$$)</option>
-      </select>
-    </div>
+    <div style="font-size: 0.85rem; color: #10b981;">● Online</div>
   </header>
 
   <div id="chat-container">
@@ -201,21 +189,29 @@
   </div>
 
   <div id="input-area">
-    <div id="credit-bar">
-      <span>Logged in as: <span id="user-email">None</span></span>
-      <span>Credits: <strong id="credit-count">1000</strong> 🪙</span>
-    </div>
     <div id="image-preview-container">
       <img id="preview-thumb" src="" alt="preview">
       <span id="preview-name" style="font-size: 0.8rem; color:#aaa;">Image attached</span>
       <button class="remove-img" onclick="clearImage()">✕</button>
     </div>
+
     <div class="input-row">
       <label class="file-btn">
         📎 <input type="file" id="image-input" accept="image/*" style="display:none;" onchange="handleImageSelect(event)">
       </label>
       <input type="text" id="prompt-input" placeholder="Ask Gemini anything..." autocomplete="off">
       <button onclick="sendMessage()">Send</button>
+    </div>
+
+    <div id="credit-bar">
+      <span>Credits: <strong id="credit-count">1000</strong> 🪙</span>
+      <select id="model-select">
+        <option value="gemini-3.1-flash-lite" class="tier-1">🟢 gemini-3.1-flash-lite ($)</option>
+        <option value="gemini-2.5-flash" class="tier-2" selected>🟠 gemini-2.5-flash ($$)</option>
+        <option value="gemini-3.5-flash" class="tier-3">🟡 gemini-3.5-flash ($$$)</option>
+        <option value="gemini-2.5-pro" class="tier-4">🟤 gemini-2.5-pro ($$$$)</option>
+        <option value="gemini-3.1-pro-preview" class="tier-5">🔴 gemini-3.1-pro-preview ($$$$$)</option>
+      </select>
     </div>
   </div>
 
@@ -225,16 +221,6 @@
     let currentBase64Image = null;
     let currentMimeType = null;
 
-    function handleCredentialResponse(response) {
-      const base64Url = response.credential.split('.')[1];
-      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-      const jsonPayload = decodeURIComponent(atob(base64).split('').map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join(''));
-      const profile = JSON.parse(jsonPayload);
-
-      document.getElementById('user-email').innerText = profile.email;
-      document.getElementById('login-overlay').style.display = 'none';
-    }
-
     function handleImageSelect(event) {
       const file = event.target.files[0];
       if (!file) return;
@@ -242,7 +228,6 @@
       currentMimeType = file.type;
       const reader = new FileReader();
       reader.onload = function(e) {
-        // Extract raw base64 string without data prefix
         const base64Full = e.target.result;
         currentBase64Image = base64Full.split(',')[1];
 
@@ -282,7 +267,6 @@
         return;
       }
 
-      // Append User Message with image preview if attached
       const userMsg = document.createElement('div');
       userMsg.className = 'message user';
       
@@ -297,7 +281,6 @@
       userMsg.innerHTML = userContentHtml;
       container.appendChild(userMsg);
 
-      // Save attachment reference locally before clearing
       const attachedImgBase64 = currentBase64Image;
       const attachedMime = currentMimeType;
 
@@ -305,7 +288,6 @@
       clearImage();
       container.scrollTop = container.scrollHeight;
 
-      // Append Loading AI placeholder
       const aiMsg = document.createElement('div');
       aiMsg.className = 'message ai';
       aiMsg.innerText = 'Thinking...';
@@ -313,7 +295,6 @@
       container.scrollTop = container.scrollHeight;
 
       try {
-        // Build payload parts dynamically
         const userParts = [];
         if (attachedImgBase64) {
           userParts.push({
@@ -343,12 +324,10 @@
         
         aiMsg.innerText = reply;
         
-        // Deduct credits based on response length
         const cost = Math.max(5, Math.floor(reply.length / 10));
         userCredits = Math.max(0, userCredits - cost);
         creditDisplay.innerText = userCredits;
 
-        // Push to history
         chatHistory.push({ role: 'user', parts: userParts });
         chatHistory.push({ role: 'model', parts: [{ text: reply }] });
 
