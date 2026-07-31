@@ -35,13 +35,14 @@
     }
 
     select {
-      background: transparent;
+      background: #1c1c1e;
       color: #ffffff;
-      border: none;
-      font-size: 22px;
+      border: 1px solid #333;
+      border-radius: 8px;
+      padding: 4px 10px;
+      font-size: 18px;
       outline: none;
       cursor: pointer;
-      appearance: none;
       text-align: center;
     }
 
@@ -93,6 +94,31 @@
       display: flex;
       flex-direction: column;
       gap: 10px;
+    }
+
+    .thinking-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 16px;
+      color: #888;
+    }
+
+    .toggle-btn {
+      background: #1c1c1e;
+      border: 1px solid #444;
+      color: #888;
+      border-radius: 20px;
+      padding: 4px 12px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .toggle-btn.active {
+      background: #3b82f6;
+      color: #ffffff;
+      border-color: #60a5fa;
     }
 
     .input-pill {
@@ -185,12 +211,12 @@
   <header>
     <button class="icon-btn">＝</button>
     <select id="model-select">
-      <option value="gemini-1.5-flash" style="color: #22c55e;">🟢 gemini-1.5-flash</option>
-      <option value="gemini-1.5-pro" style="color: #eab308;">🟡 gemini-1.5-pro</option>
-      <option value="gemini-2.0-flash-exp" style="color: #3b82f6;">🔵 gemini-2.0-flash-exp</option>
+      <option value="gemini-1.5-flash-8b" style="color: #22c55e;">⚡ Gemini Flash (Lite)</option>
+      <option value="gemini-1.5-flash" selected style="color: #3b82f6;">🟢 Gemini Flash</option>
+      <option value="gemini-1.5-pro" style="color: #eab308;">🟡 Gemini Pro</option>
     </select>
     <div class="header-right">
-      <button class="icon-btn" onclick="promptForKey()">🔑</button>
+      <button class="icon-btn">↻</button>
       <button class="icon-btn">⋮</button>
     </div>
   </header>
@@ -200,6 +226,10 @@
   </div>
 
   <div id="input-area">
+    <div class="thinking-bar">
+      <button id="thinking-toggle" class="toggle-btn" onclick="toggleThinking()">🧠 Extended Thinking: OFF</button>
+    </div>
+
     <div id="image-preview-container">
       <img id="preview-thumb" src="" alt="preview">
       <button class="remove-img" onclick="clearImage()">✕</button>
@@ -223,24 +253,20 @@
     let chatHistory = [];
     let currentBase64Image = null;
     let currentMimeType = null;
+    let isExtendedThinking = false;
 
-    function getApiKey() {
-      let key = localStorage.getItem('MY_GEMINI_KEY');
-      if (!key) {
-        key = prompt("Paste your Gemini API key (starts with AIzaSy...):");
-        if (key) {
-          key = key.trim();
-          localStorage.setItem('MY_GEMINI_KEY', key);
-        }
-      }
-      return key;
-    }
+    // REPLACE WITH YOUR ACTUAL VERCEL DEPLOYMENT DOMAIN:
+    const VERCEL_BACKEND_URL = 'https://YOUR_VERCEL_APP_NAME.vercel.app/api/generate';
 
-    function promptForKey() {
-      const newKey = prompt("Update your Gemini API Key:", localStorage.getItem('MY_GEMINI_KEY') || '');
-      if (newKey !== null) {
-        localStorage.setItem('MY_GEMINI_KEY', newKey.trim());
-        alert("API Key saved successfully!");
+    function toggleThinking() {
+      isExtendedThinking = !isExtendedThinking;
+      const btn = document.getElementById('thinking-toggle');
+      if (isExtendedThinking) {
+        btn.classList.add('active');
+        btn.innerText = '🧠 Extended Thinking: ON';
+      } else {
+        btn.classList.remove('active');
+        btn.innerText = '🧠 Extended Thinking: OFF';
       }
     }
 
@@ -280,12 +306,6 @@
       const creditDisplay = document.getElementById('credit-count');
       const modelSelect = document.getElementById('model-select');
       
-      const apiKey = getApiKey();
-      if (!apiKey) {
-        alert("No API key provided!");
-        return;
-      }
-
       const text = input.value.trim();
       if (!text && !currentBase64Image) return;
 
@@ -317,37 +337,35 @@
 
       const aiMsg = document.createElement('div');
       aiMsg.className = 'message ai';
-      aiMsg.innerHTML = 'Thinking...';
+      aiMsg.innerHTML = isExtendedThinking ? 'Thinking deeply... 🧠' : 'Thinking...';
       container.appendChild(aiMsg);
       container.scrollTop = container.scrollHeight;
 
       try {
-        const parts = [];
+        const userParts = [];
         if (attachedImgBase64) {
-          parts.push({ inline_data: { mime_type: attachedMime, data: attachedImgBase64 } });
+          userParts.push({ inline_data: { mime_type: attachedMime, data: attachedImgBase64 } });
         }
         if (text) {
-          parts.push({ text: text });
+          userParts.push({ text: text });
         }
 
-        const selectedModel = modelSelect.value;
-        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${selectedModel}:generateContent?key=${apiKey}`;
-
-        const res = await fetch(endpoint, {
+        const res = await fetch(VERCEL_BACKEND_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            contents: [
-              ...chatHistory,
-              { role: 'user', parts: parts }
-            ]
+            prompt: text || "Analyze this image.",
+            model: modelSelect.value,
+            history: chatHistory,
+            extendedThinking: isExtendedThinking,
+            imagePart: attachedImgBase64 ? { mime_type: attachedMime, data: attachedImgBase64 } : null
           })
         });
 
         const data = await res.json();
         
         if (data.error) {
-          aiMsg.innerHTML = `Google Error: ${data.error.message} (Click 🔑 icon in top header to update key)`;
+          aiMsg.innerHTML = `Error: ${data.error.message || data.error}`;
           return;
         }
 
@@ -360,11 +378,11 @@
         userCredits = Math.max(0, userCredits - cost);
         creditDisplay.innerText = userCredits;
 
-        chatHistory.push({ role: 'user', parts: parts });
+        chatHistory.push({ role: 'user', parts: userParts });
         chatHistory.push({ role: 'model', parts: [{ text: reply.replace(/<br>/g, '\n') }] });
 
       } catch (err) {
-        aiMsg.innerHTML = 'Request failed. Network error or invalid API key.';
+        aiMsg.innerHTML = 'Request failed. Check Vercel backend URL!';
       }
 
       container.scrollTop = container.scrollHeight;
