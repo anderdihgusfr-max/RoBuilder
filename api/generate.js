@@ -4,18 +4,30 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { prompt, model, history } = req.body;
-    
-    // Uses your selected model name safely, defaulting to gemini-3.1-flash-lite if blank
+    const { prompt, model, history, imagePart } = req.body;
     const selectedModel = model || 'gemini-3.1-flash-lite';
+
+    const currentUserParts = [];
+    if (imagePart) {
+      currentUserParts.push({
+        inline_data: {
+          mime_type: imagePart.mime_type,
+          data: imagePart.data
+        }
+      });
+    }
+    currentUserParts.push({ text: prompt || "Analyze this image." });
 
     const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${selectedModel}:generateContent?key=${process.env.GEMINI_API_KEY}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
+        system_instruction: {
+          parts: [{ text: "Talk like a normal human friend. Keep answers super short, casual, and conversational. Never sound like an AI or a robot." }]
+        },
         contents: [
           ...(history || []),
-          { role: 'user', parts: [{ text: prompt }] }
+          { role: 'user', parts: currentUserParts }
         ]
       })
     });
