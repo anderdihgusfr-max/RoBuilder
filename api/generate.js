@@ -4,46 +4,60 @@ export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
   if (req.method === 'OPTIONS') return res.status(200).end();
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   const apiKey = process.env.GEMINI_API_KEY;
-
-  // Debug check: If no key or key is empty
   if (!apiKey) {
-    return res.status(500).json({ 
-      error: 'Vercel sees NO key at all! Check Environment Variable name (must be GEMINI_API_KEY).' 
-    });
+    return res.status(500).json({ error: 'GEMINI_API_KEY is not configured in Vercel settings.' });
   }
 
-  // Debug check: Print first 4 letters of the key so you know which one Vercel has loaded
-  const keySnippet = apiKey.substring(0, 4);
-
   try {
-    const { prompt, model, history } = req.body;
-    const selectedModel = model || 'gemini-2.5-flash';
+    const { prompt, model, history, imagePart, extendedThinking } = req.body;
+    const selectedModel = model || 'gemini-1.5-flash';
+
+    const parts = [];
+    if (imagePart && imagePart.data && imagePart.mime_type) {
+      parts.push({
+        inline_data: {
+          mime_type: imagePart.mime_type,
+          data: imagePart.data
+        }
+      });
+    }
+    if (prompt) {
+      parts.push({ text: prompt });
+    }
+
+    const contents = [];
+    if (Array.isArray(history) && history.length > 0) {
+      contents.push(...history);
+    }
+    contents.push({ role: 'user', parts });
+
+    const requestBody = { contents };
+
+    // Inject extended thinking logic if toggled on
+    if (extendedThinking) {
+      requestBody.systemInstruction = {
+        parts: [{ 
+          text: "You are operating in Extended Thinking Mode. Analyze the problem thoroughly, break it down into detailed step-by-step logic, evaluate edge cases, and provide an exhaustive, deeply reasoned response." 
+        }]
+      };
+    }
 
     const googleResponse = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/${selectedModel}:generateContent?key=${apiKey}`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: history || [{ role: 'user', parts: [{ text: prompt }] }]
-        })
+        body: JSON.stringify(requestBody)
       }
     );
 
     const data = await googleResponse.json();
-
-    if (data.error) {
-      // Passes back Google's exact error along with the key prefix Vercel used
-      return res.status(400).json({
-        error: `Google rejected key starting with '${keySnippet}...': ${data.error.message}`
-      });
-    }
-
-    return res.status(200).json(data);
+    return res.status(googleResponse.status).json(data);
 
   } catch (err) {
-    return res.status(500).json({ error: err.message });
+    return res.status(500).json({ error: err.message || 'Failed to process request.' });
   }
 }
