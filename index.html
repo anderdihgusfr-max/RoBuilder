@@ -189,6 +189,275 @@
       <option value="gemini-2.5-pro" style="color: #ef4444;">🟤 gemini-2.5-pro ($$$$)</option>
     </select>
     <div class="header-right">
+      <button class="icon-btn" onclick="promptForKey()">🔑</button>
+      <button class="icon-btn">⋮</button>
+    </div>
+  </header>
+
+  <div id="chat-container">
+    <div class="message ai">Gemini +<br><br>hey bro! How can I help you today?</div>
+  </div>
+
+  <div id="input-area">
+    <div id="image-preview-container">
+      <img id="preview-thumb" src="" alt="preview">
+      <button class="remove-img" onclick="clearImage()">✕</button>
+    </div>
+    
+    <div class="input-pill">
+      <label class="action-btn">
+        ＋ <input type="file" id="image-input" accept="image/*" style="display:none;" onchange="handleImageSelect(event)">
+      </label>
+      <input type="text" id="prompt-input" placeholder="Ask Gemini" autocomplete="off">
+      <button class="action-btn" onclick="sendMessage()" style="border: 1px solid #444; border-radius: 8px; width: 32px; height: 32px; font-size: 16px;">⏏</button>
+    </div>
+    
+    <div id="credit-bar">
+      Credits: <strong id="credit-count" style="color:#4ade80; margin-left: 5px;">1000</strong> 🪙
+    </div>
+  </div>
+
+  <script>
+    let userCredits = 1000;
+    let chatHistory = [];
+    let currentBase64Image = null;
+    let currentMimeType = null;
+
+    function getApiKey() {
+      let key = localStorage.getItem('MY_GEMINI_KEY');
+      if (!key) {
+        key = prompt("Paste your Gemini API key (starts with AIzaSy...):");
+        if (key) {
+          key = key.trim();
+          localStorage.setItem('MY_GEMINI_KEY', key);
+        }
+      }
+      return key;
+    }
+
+    function promptForKey() {
+      const newKey = prompt("Update your Gemini API Key:", localStorage.getItem('MY_GEMINI_KEY') || '');
+      if (newKey !== null) {
+        localStorage.setItem('MY_GEMINI_KEY', newKey.trim());
+        alert("API Key saved successfully!");
+      }
+    }
+
+    function handleImageSelect(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      currentMimeType = file.type;
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const base64Full = e.target.result;
+        currentBase64Image = base64Full.split(',')[1];
+        document.getElementById('preview-thumb').src = base64Full;
+        document.getElementById('image-preview-container').style.display = 'flex';
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function clearImage() {
+      currentBase64Image = null;
+      currentMimeType = null;
+      document.getElementById('image-input').value = '';
+      document.getElementById('image-preview-container').style.display = 'none';
+    }
+
+    function openModal(imgSrc) {
+      document.getElementById('modal-img').src = imgSrc;
+      document.getElementById('image-modal').style.display = 'flex';
+    }
+
+    function closeModal() {
+      document.getElementById('image-modal').style.display = 'none';
+    }
+
+    async function sendMessage() {
+      const input = document.getElementById('prompt-input');
+      const container = document.getElementById('chat-container');
+      const creditDisplay = document.getElementById('credit-count');
+      const modelSelect = document.getElementById('model-select');
+      
+      const apiKey = getApiKey();
+      if (!apiKey) {
+        alert("No API key provided!");
+        return;
+      }
+
+      const text = input.value.trim();
+      if (!text && !currentBase64Image) return;
+
+      if (userCredits <= 0) {
+        alert("Out of credits! You broke, bradar 💀");
+        return;
+      }
+
+      const userMsg = document.createElement('div');
+      userMsg.className = 'message user';
+      
+      let userContentHtml = '';
+      if (currentBase64Image) {
+        const fullDataUrl = `data:${currentMimeType};base64,${currentBase64Image}`;
+        userContentHtml += `<img src="${fullDataUrl}" class="chat-img" onclick="openModal('${fullDataUrl}')">`;
+      }
+      if (text) {
+        userContentHtml += `<span>${text}</span>`;
+      }
+      userMsg.innerHTML = userContentHtml;
+      container.appendChild(userMsg);
+
+      const attachedImgBase64 = currentBase64Image;
+      const attachedMime = currentMimeType;
+
+      input.value = '';
+      clearImage();
+      container.scrollTop = container.scrollHeight;
+
+      const aiMsg = document.createElement('div');
+      aiMsg.className = 'message ai';
+      aiMsg.innerHTML = 'Thinking...';
+      container.appendChild(aiMsg);
+      container.scrollTop = container.scrollHeight;
+
+      try {
+        const parts = [];
+        if (attachedImgBase64) {
+          parts.push({ inline_data: { mime_type: attachedMime, data: attachedImgBase64 } });
+        }
+        if (text) {
+          parts.push({ text: text });
+        }
+
+        const selectedModel = modelSelect.value;
+        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${selectedModel}:generateContent?key=${apiKey}`;
+
+        const res = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [
+              ...chatHistory,
+              { role: 'user', parts: parts }
+            ]
+          })
+        });
+
+        const data = await res.json();
+        
+        if (data.error) {
+          aiMsg.innerHTML = `Google Error: ${data.error.message} (Click 🔑 icon in top header to update key)`;
+          return;
+        }
+
+        let reply = data.candidates?.[0]?.content?.parts?.[0]?.text || "No output generated.";
+        
+        reply = reply.replace(/\n/g, '<br>');
+        aiMsg.innerHTML = reply;
+        
+        const cost = Math.max(5, Math.floor(reply.length / 10));
+        userCredits = Math.max(0, userCredits - cost);
+        creditDisplay.innerText = userCredits;
+
+        chatHistory.push({ role: 'user', parts: parts });
+        chatHistory.push({ role: 'model', parts: [{ text: reply.replace(/<br>/g, '\n') }] });
+
+      } catch (err) {
+        aiMsg.innerHTML = 'Request failed. Network error or invalid API key.';
+      }
+
+      container.scrollTop = container.scrollHeight;
+    }
+
+    document.getElementById('prompt-input').addEventListener('keypress', function (e) {
+      if (e.key === 'Enter') sendMessage();
+    });
+  </script>
+</body>
+</html>
+      background: transparent;
+      border: none;
+      color: #ffffff;
+      font-size: 20px;
+      outline: none;
+    }
+    input[type="text"]::placeholder { color: #888; }
+
+    .action-btn {
+      background: transparent;
+      color: #888;
+      border: none;
+      font-size: 24px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #credit-bar {
+      font-size: 16px;
+      color: #666;
+      display: flex;
+      justify-content: center;
+      text-align: center;
+    }
+
+    #image-preview-container {
+      display: none;
+      align-items: center;
+      gap: 10px;
+      background: #1c1c1e;
+      padding: 5px 10px;
+      border-radius: 15px;
+      width: fit-content;
+    }
+    #image-preview-container img {
+      width: 40px;
+      height: 40px;
+      object-fit: cover;
+      border-radius: 8px;
+    }
+    .remove-img {
+      background: #ef4444;
+      color: #fff;
+      border: none;
+      border-radius: 50%;
+      width: 22px;
+      height: 22px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    #image-modal {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0, 0, 0, 0.95);
+      justify-content: center;
+      align-items: center;
+      z-index: 4000;
+      cursor: pointer;
+    }
+    #image-modal img {
+      max-width: 95%;
+      max-height: 95%;
+      border-radius: 10px;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="image-modal" onclick="closeModal()">
+    <img id="modal-img" src="" alt="Fullscreen view">
+  </div>
+
+  <header>
+    <button class="icon-btn">＝</button>
+    <select id="model-select">
+      <option value="gemini-2.5-flash" style="color: #22c55e;">🟢 gemini-2.5-flash ($)</option>
+      <option value="gemini-2.5-pro" style="color: #ef4444;">🟤 gemini-2.5-pro ($$$$)</option>
+    </select>
+    <div class="header-right">
       <button class="icon-btn">↻</button>
       <button class="icon-btn">⋮</button>
     </div>
