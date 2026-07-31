@@ -1,63 +1,49 @@
 export default async function handler(req, res) {
-  // Handle CORS headers so GitHub Pages can request this endpoint
-  res.setHeader('Access-Control-Allow-Credentials', true);
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
-  res.setHeader(
-    'Access-Control-Allow-Headers',
-    'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version'
-  );
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
-  if (req.method === 'OPTIONS') {
-    res.status(200).end();
-    return;
-  }
-
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
+  if (req.method === 'OPTIONS') return res.status(200).end();
 
   const apiKey = process.env.GEMINI_API_KEY;
+
+  // Debug check: If no key or key is empty
   if (!apiKey) {
-    return res.status(500).json({ error: 'GEMINI_API_KEY is not configured in Vercel environment variables.' });
+    return res.status(500).json({ 
+      error: 'Vercel sees NO key at all! Check Environment Variable name (must be GEMINI_API_KEY).' 
+    });
   }
 
+  // Debug check: Print first 4 letters of the key so you know which one Vercel has loaded
+  const keySnippet = apiKey.substring(0, 4);
+
   try {
-    const { prompt, model, history, imagePart } = req.body;
+    const { prompt, model, history } = req.body;
     const selectedModel = model || 'gemini-2.5-flash';
 
-    const parts = [];
-    if (imagePart && imagePart.data && imagePart.mime_type) {
-      parts.push({
-        inline_data: {
-          mime_type: imagePart.mime_type,
-          data: imagePart.data
-        }
-      });
-    }
-
-    if (prompt) {
-      parts.push({ text: prompt });
-    }
-
-    const contents = [];
-    if (Array.isArray(history) && history.length > 0) {
-      contents.push(...history);
-    }
-    contents.push({ role: 'user', parts });
-
-    const response = await fetch(
+    const googleResponse = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/${selectedModel}:generateContent?key=${apiKey}`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ contents })
+        body: JSON.stringify({
+          contents: history || [{ role: 'user', parts: [{ text: prompt }] }]
+        })
       }
     );
 
-    const data = await response.json();
+    const data = await googleResponse.json();
+
+    if (data.error) {
+      // Passes back Google's exact error along with the key prefix Vercel used
+      return res.status(400).json({
+        error: `Google rejected key starting with '${keySnippet}...': ${data.error.message}`
+      });
+    }
+
     return res.status(200).json(data);
-  } catch (error) {
-    return res.status(500).json({ error: error.message || 'Failed to process request.' });
+
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
   }
 }
