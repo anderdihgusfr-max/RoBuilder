@@ -1,25 +1,38 @@
 export default async function handler(req, res) {
+  // Handle CORS headers so GitHub Pages can request this endpoint
+  res.setHeader('Access-Control-Allow-Credentials', true);
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
+  res.setHeader(
+    'Access-Control-Allow-Headers',
+    'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version'
+  );
+
+  if (req.method === 'OPTIONS') {
+    res.status(200).end();
+    return;
+  }
+
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  try {
-    const { prompt, activeModel, mode, uploadedImages } = req.body;
-    
-    // Fallback model selection matching your frontend options
-    const modelToUse = activeModel || 'gemini-2.5-flash';
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    return res.status(500).json({ error: 'GEMINI_API_KEY is not configured in Vercel environment variables.' });
+  }
 
-    // Build contents array for Gemini API (supporting text and multiple images)
+  try {
+    const { prompt, model, history, imagePart } = req.body;
+    const selectedModel = model || 'gemini-2.5-flash';
+
     const parts = [];
-    
-    if (uploadedImages && uploadedImages.length > 0) {
-      uploadedImages.forEach(base64Data => {
-        parts.push({
-          inline_data: {
-            mime_type: "image/jpeg",
-            data: base64Data
-          }
-        });
+    if (imagePart && imagePart.data && imagePart.mime_type) {
+      parts.push({
+        inline_data: {
+          mime_type: imagePart.mime_type,
+          data: imagePart.data
+        }
       });
     }
 
@@ -27,28 +40,24 @@ export default async function handler(req, res) {
       parts.push({ text: prompt });
     }
 
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelToUse}:generateContent?key=${process.env.GEMINI_API_KEY}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [
-          { role: 'user', parts: parts }
-        ]
-      })
-    });
-
-    if (response.status === 429) {
-      return res.status(429).json({ error: "RATE_LIMIT" });
+    const contents = [];
+    if (Array.isArray(history) && history.length > 0) {
+      contents.push(...history);
     }
+    contents.push({ role: 'user', parts });
+
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${selectedModel}:generateContent?key=${apiKey}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contents })
+      }
+    );
 
     const data = await response.json();
-    
-    if (data.error) {
-      return res.status(400).json({ error: data.error.message || data.error });
-    }
-
     return res.status(200).json(data);
   } catch (error) {
-    return res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: error.message || 'Failed to process request.' });
   }
 }
