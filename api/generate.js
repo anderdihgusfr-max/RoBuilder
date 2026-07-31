@@ -25,7 +25,9 @@ export default async function handler(req, res) {
   }
 
   try {
-    const modelName = activeModel || 'gemini-1.5-flash';
+    // Sanitize model name to prevent spaces/capitalization errors in URL endpoint
+    const rawModel = activeModel || 'gemini-1.5-flash';
+    const modelName = rawModel.toLowerCase().includes('gemini') ? rawModel.toLowerCase().replace(/\s+/g, '-') : 'gemini-1.5-flash';
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
 
     let parts = [];
