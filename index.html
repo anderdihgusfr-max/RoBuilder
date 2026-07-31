@@ -45,24 +45,79 @@
       padding: 5px;
     }
 
-    /* Fixed top model dropdown for touchscreens */
+    /* Custom Model Dropdown Button & Modal */
     .model-wrapper {
       position: relative;
       display: flex;
       align-items: center;
     }
 
-    select#model-select {
+    .model-selector-btn {
       background: #111;
       color: #3b82f6;
       border: 1px solid #333;
       border-radius: 8px;
       padding: 6px 12px;
       font-size: 17px;
-      outline: none;
       cursor: pointer;
-      appearance: auto; /* Restores mobile native drop-down arrow */
-      text-align: center;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* Dropdown Overlay / Modal menu */
+    .model-dropdown-menu {
+      display: none;
+      position: absolute;
+      top: 45px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #161618;
+      border: 1px solid #333;
+      border-radius: 12px;
+      width: 240px;
+      padding: 8px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.8);
+      z-index: 500;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .model-dropdown-menu.show {
+      display: flex;
+    }
+
+    .dropdown-item {
+      background: transparent;
+      border: none;
+      color: #fff;
+      padding: 10px 12px;
+      font-size: 16px;
+      border-radius: 8px;
+      text-align: left;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .dropdown-item:active, .dropdown-item.selected {
+      background: #222226;
+    }
+
+    .dropdown-divider {
+      height: 1px;
+      background: #333;
+      margin: 4px 0;
+    }
+
+    .thinking-option {
+      color: #888;
+    }
+
+    .thinking-option.active {
+      color: #60a5fa;
+      font-weight: bold;
     }
 
     .header-right { display: flex; gap: 10px; }
@@ -115,30 +170,6 @@
       flex-direction: column;
       gap: 8px;
       border-top: 1px solid #111;
-    }
-
-    .thinking-bar {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .toggle-btn {
-      background: #1c1c1e;
-      border: 1px solid #444;
-      color: #888;
-      border-radius: 20px;
-      padding: 6px 14px;
-      font-size: 15px;
-      cursor: pointer;
-      width: 100%;
-      text-align: center;
-    }
-
-    .toggle-btn.active {
-      background: #3b82f6;
-      color: #ffffff;
-      border-color: #60a5fa;
     }
 
     .input-pill {
@@ -231,13 +262,32 @@
 
   <header>
     <button class="icon-btn">＝</button>
+    
     <div class="model-wrapper">
-      <select id="model-select">
-        <option value="gemini-1.5-flash-8b">⚡ Gemini Flash (Lite)</option>
-        <option value="gemini-1.5-flash" selected>🟢 Gemini Flash</option>
-        <option value="gemini-1.5-pro">🟡 Gemini Pro</option>
-      </select>
+      <button class="model-selector-btn" onclick="toggleMenu(event)">
+        <span id="selected-model-label">🟢 Gemini Flash</span> ▼
+      </button>
+
+      <div id="model-menu" class="model-dropdown-menu">
+        <button class="dropdown-item selected" onclick="selectModel('gemini-2.5-flash', '🟢 Gemini Flash')">
+          🟢 Gemini Flash
+        </button>
+        <button class="dropdown-item" onclick="selectModel('gemini-2.5-flash-lite', '⚡ Gemini Flash (Lite)')">
+          ⚡ Gemini Flash (Lite)
+        </button>
+        <button class="dropdown-item" onclick="selectModel('gemini-2.5-pro', '🟡 Gemini Pro')">
+          🟡 Gemini Pro
+        </button>
+        
+        <div class="dropdown-divider"></div>
+
+        <button id="menu-thinking-btn" class="dropdown-item thinking-option" onclick="toggleExtendedThinkingInMenu(event)">
+          <span>🧠 Extended Thinking</span>
+          <span id="thinking-status">OFF</span>
+        </button>
+      </div>
     </div>
+
     <div class="header-right">
       <button class="icon-btn">↻</button>
       <button class="icon-btn">⋮</button>
@@ -249,10 +299,6 @@
   </div>
 
   <div id="input-area">
-    <div class="thinking-bar">
-      <button id="thinking-toggle" class="toggle-btn" onclick="toggleThinking()">🧠 Extended Thinking: OFF</button>
-    </div>
-
     <div id="image-preview-container">
       <img id="preview-thumb" src="" alt="preview">
       <button class="remove-img" onclick="clearImage()">✕</button>
@@ -277,21 +323,44 @@
     let currentBase64Image = null;
     let currentMimeType = null;
     let isExtendedThinking = false;
+    let currentSelectedModel = 'gemini-2.5-flash';
 
-    // REPLACE WITH YOUR ACTUAL VERCEL APP URL:
-    const VERCEL_BACKEND_URL = 'https://YOUR_VERCEL_APP_NAME.vercel.app/api/generate';
+    const VERCEL_BACKEND_URL = `${window.location.origin}/api/generate`;
 
-    function toggleThinking() {
+    function toggleMenu(e) {
+      e.stopPropagation();
+      document.getElementById('model-menu').classList.toggle('show');
+    }
+
+    function toggleExtendedThinkingInMenu(e) {
+      e.stopPropagation(); // Prevents the dropdown menu from closing when clicked!
       isExtendedThinking = !isExtendedThinking;
-      const btn = document.getElementById('thinking-toggle');
+      
+      const btn = document.getElementById('menu-thinking-btn');
+      const status = document.getElementById('thinking-status');
+
       if (isExtendedThinking) {
         btn.classList.add('active');
-        btn.innerText = '🧠 Extended Thinking: ON';
+        status.innerText = 'ON';
       } else {
         btn.classList.remove('active');
-        btn.innerText = '🧠 Extended Thinking: OFF';
+        status.innerText = 'OFF';
       }
     }
+
+    function selectModel(modelVal, labelText) {
+      currentSelectedModel = modelVal;
+      document.getElementById('selected-model-label').innerText = labelText;
+      document.getElementById('model-menu').classList.remove('show');
+    }
+
+    // Close menu when tapping anywhere outside of it
+    document.addEventListener('click', function(e) {
+      const menu = document.getElementById('model-menu');
+      if (menu.classList.contains('show')) {
+        menu.classList.remove('show');
+      }
+    });
 
     function handleImageSelect(event) {
       const file = event.target.files[0];
@@ -327,7 +396,6 @@
       const input = document.getElementById('prompt-input');
       const container = document.getElementById('chat-container');
       const creditDisplay = document.getElementById('credit-count');
-      const modelSelect = document.getElementById('model-select');
       
       const text = input.value.trim();
       if (!text && !currentBase64Image) return;
@@ -378,7 +446,7 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             prompt: text || "Analyze this image.",
-            model: modelSelect.value,
+            model: currentSelectedModel,
             history: chatHistory,
             extendedThinking: isExtendedThinking,
             imagePart: attachedImgBase64 ? { mime_type: attachedMime, data: attachedImgBase64 } : null
@@ -405,7 +473,7 @@
         chatHistory.push({ role: 'model', parts: [{ text: reply.replace(/<br>/g, '\n') }] });
 
       } catch (err) {
-        aiMsg.innerHTML = 'Request failed. Check Vercel backend URL!';
+        aiMsg.innerHTML = 'Request failed. Check Vercel backend!';
       }
 
       container.scrollTop = container.scrollHeight;
